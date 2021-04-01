@@ -11,6 +11,7 @@ def encode_img(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         path = data['path']
+
         try:
             save_feature(path)
         except Exception as e:

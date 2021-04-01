@@ -11,58 +11,39 @@ import imageio
 import glob
 
 def save_feature(path):
-    root = glob.glob(path + '/*')
+    image_folder = glob.glob(path + '/*.jpg')
+    images = [imageio.imread(file) for file in image_folder]
 
-    for folder in root:
-        image_folder = glob.glob(folder + '/*.jpg')
-        images = [imageio.imread(file) for file in image_folder]
+    for i, img in enumerate(images):
+        face_location = face_recognition.face_locations(img)  # 얼굴 검출
 
-        for i, img in enumerate(images):
-            face_location = face_recognition.face_locations(img)  # 얼굴 검출
+        # 사진에서 검출된 여러 얼굴 중 가장 큰 얼굴 추출
+        if face_location.__len__() > 0:
+            y, w, h, x = face_location[0]
+            max = img[y:h, x:w]
+        else:
+            raise Exception('얼굴 검출 실패')
 
-            # 사진에서 검출된 여러 얼굴 중 가장 큰 얼굴 추출
-            if face_location.__len__() > 0:
-                y, w, h, x = face_location[0]
-                max = img[y:h, x:w]
-            else:
-                raise Exception('얼굴 검출 실패')
+        for loc in face_location:
+            y, w, h, x = loc
+            tmp = img[y:h, x:w]
 
-            for loc in face_location:
-                y, w, h, x = loc
-                tmp = img[y:h, x:w]
-                if max.shape[0] * max.shape[1] < tmp.shape[0] * tmp.shape[1]:
-                    max = tmp
+            if max.shape[0] * max.shape[1] < tmp.shape[0] * tmp.shape[1]:
+                max = tmp
 
-            face_encode = face_recognition.face_encodings(max)
+        face_encode = face_recognition.face_encodings(max)
 
-            if len(face_encode) == 0:
-                raise Exception('얼굴 검출 실패')
-            else:
-                np.save(folder + '/%d.npy' % i, face_encode)
+        if len(face_encode) == 0:
+            raise Exception('얼굴 검출 실패')
+        else:
+            np.save(path + '/%d.npy' % i, face_encode)
 
 def npy_loader(path):
-    tmp=np.load(path)
-    return torch.from_numpy(tmp).float()
+    return torch.from_numpy(np.load(path)).float()
 
 def load_data(path):
     train_data = dset.folder.DatasetFolder(path, npy_loader, extensions='.npy')
     return train_data
-
-def ComputeAccr(model, data_loader):
-  model.eval()
-  correct = 0
-  total = 0
-  for imgs, label in data_loader:
-    imgs=imgs.squeeze(1)
-    imgs = Variable(imgs).cuda()
-    label = Variable(label).cuda()
-
-    output = model(imgs)
-    _,output_index = torch.max(output,1)
-    total += label.size(0)
-    correct += (output_index==label).sum().float()
-    model.train()
-    return 100*correct/total
 
 def train_model(path, learning_rate, epoch):
     train_data = load_data(path)
