@@ -19,7 +19,7 @@ from face import predict
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('model/encode', predict.encode_img),
-    path('model/<int:room_num>', predict.delete_model),
+    path('model/<str:room_num>', predict.delete_model),
     path('model/prepare', predict.prepare_model),
     path('model/match', predict.match_user)
 ]
