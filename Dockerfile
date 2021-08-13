@@ -4,7 +4,9 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt ./
 
-RUN apt-get install cmake
+RUN apt-get update
+
+RUN apt-get install build-essential cmake -y
 
 RUN pip install -r requirements.txt --no-cache-dir
 
