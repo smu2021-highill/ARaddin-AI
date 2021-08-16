@@ -81,7 +81,7 @@ def train_model(path, learning_rate, epoch):
     for i in range(epoch):
         for imgs, labels in train_batch:
             imgs = imgs.squeeze(1)
-
+      
             if torch.cuda.is_available():
                 imgs = Variable(imgs, requires_grad=True).cuda()
                 labels = Variable(labels).cuda()
