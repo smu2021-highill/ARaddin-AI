@@ -81,7 +81,7 @@ def train_model(path, learning_rate, epoch):
     for i in range(epoch):
         for imgs, labels in train_batch:
             imgs = imgs.squeeze(1)
-      
+
             if torch.cuda.is_available():
                 imgs = Variable(imgs, requires_grad=True).cuda()
                 labels = Variable(labels).cuda()
@@ -103,31 +103,34 @@ def predict(model,path):
     class_index = []
 
     face_location = face_recognition.face_locations(img)
-    for loc in face_location:
-        y, w, h, x = loc
-        face = img[y:h, x:w]
-        face_encode = face_recognition.face_encodings(face)
 
-        if len(face_encode) > 0:
-            face_encode = face_encode[0]
-        else:
-            continue
+    with torch.no_grad():
+        for loc in face_location:
+            y, w, h, x = loc
+            face = img[y:h, x:w]
+            face_encode = face_recognition.face_encodings(face)
 
-        face_encode = torch.tensor(face_encode).float()
-        face_encode = face_encode.unsqueeze(0)
+            if len(face_encode) > 0:
+                face_encode = face_encode[0]
+            else:
+                continue
 
-        if torch.cuda.is_available():
-            face_encode = Variable(face_encode).cuda()
-        else:
-            face_encode = Variable(face_encode)
+            face_encode = torch.tensor(face_encode).float()
+            face_encode = face_encode.unsqueeze(0)
 
-        output = model(face_encode)
-        _, output_index = torch.max(output, 1)
+            if torch.cuda.is_available():
+                face_encode = Variable(face_encode).cuda()
+            else:
+                face_encode = Variable(face_encode)
 
-        class_index.append(output_index)
-        pred_prob.append(F.softmax(output[0], dim=0)[output_index])
+            output = model(face_encode)
+            _, output_index = torch.max(output, 1)
 
-    pred_prob=np.asarray(pred_prob)
-    max_prob = pred_prob.max()
+            class_index.append(output_index)
+            pred_prob.append(np.array(F.softmax(output[0], dim=0)[output_index]))
+
+
+        pred_prob=np.array(pred_prob)
+        max_prob = pred_prob.max()
 
     return class_list[class_index[pred_prob.argmax()]], max_prob
